@@ -1,0 +1,26 @@
+{
+    "name": "faerun-date",
+    "version": "0.1.0",
+    "description": "Convert real-world dates into the Forgotten Realms (Faerûn) calendar format",
+    "main": "src/index.js",
+    "exports": {
+      ".": {
+        "import": "./src/index.js",
+        "require": "./src/index.js"
+      }
+    },
+    "scripts": {
+      "test": "echo \"No tests specified\" && exit 0"
+    },
+    "keywords": [
+      "dnd",
+      "forgotten-realms",
+      "calendar",
+      "faerun",
+      "date",
+      "fantasy",
+      "rpg"
+    ],
+    "author": "Cantilux",
+    "license": "MIT"
+  }
