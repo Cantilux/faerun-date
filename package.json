@@ -1,6 +1,6 @@
 {
     "name": "faerun-date",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "Convert real-world dates into the Forgotten Realms (Faerûn) calendar format",
     "main": "src/index.js",
     "exports": {
