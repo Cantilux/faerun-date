@@ -3,6 +3,8 @@
 Convert real-world dates into the **Forgotten Realms** (Faerûn) calendar format.  
 Inspired by Dungeons & Dragons and the Harptos calendar.
 
+faerun-date is a JavaScript library that transforms standard dates into the calendar system of Faerûn, the world of the Forgotten Realms (Dungeons & Dragons). It includes accurate mapping of months, 10-day weeks, seasonal cycles, and unique Faerûnian holidays like Greengrass and Midsummer.
+
 > Perfect for RPG tools, worldbuilding projects, and immersive D&D experiences.
 
 ---
