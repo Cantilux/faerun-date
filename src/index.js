@@ -30,7 +30,7 @@ class FaerunDate {
 
     constructor(date, options = {}) {
         const inputDate = date instanceof Date ? date : new Date();
-        const day = inputDate.getDate();
+        const day = String(inputDate.getDate()).padStart(2, '0');
         const month = inputDate.getMonth() + 1;
         const year = inputDate.getFullYear();
 
@@ -41,14 +41,6 @@ class FaerunDate {
 
     static isLeapYear(year) {
         return year % 4 === 0;
-    }
-
-    getDay() {
-        let day = ''+this.realDate.day;
-        if (day.length == 1) {
-            day = `0${day}`;
-        }
-        return day
     }
 
     getFestival() {
@@ -70,7 +62,7 @@ class FaerunDate {
 
     getFaerunDateString() {
         const festival = this.getFestival();
-        return festival ? `[Festival] ${festival}` : `${this.getDay()} ${this.faerunMonth}`;
+        return festival ? `[Festival] ${festival}` : `${this.realDate.day} ${this.faerunMonth}`;
     }
 
     getFaerunYear() {
@@ -83,7 +75,7 @@ class FaerunDate {
         const yearPart = this.getFaerunYear() ? ` ${this.getFaerunYear()} DR` : "";
         return festival
             ? `${festival} – Season: ${this.getSeason()}`
-            : `${weekday}, ${this.getDay()} ${this.faerunMonth}${yearPart} – Season: ${this.getSeason()}`;
+            : `${weekday}, ${this.realDate.day} ${this.faerunMonth}${yearPart} – Season: ${this.getSeason()}`;
     }
 
     static parse(dateString, options = {}) {
