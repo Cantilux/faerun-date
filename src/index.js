@@ -43,6 +43,14 @@ class FaerunDate {
         return year % 4 === 0;
     }
 
+    getDay() {
+        let day = ''+this.realDate.day;
+        if (day.length == 1) {
+            day = `0${day}`;
+        }
+        return day
+    }
+
     getFestival() {
         const { day, month, year } = this.realDate;
         const leap = FaerunDate.isLeapYear(year);
@@ -62,7 +70,7 @@ class FaerunDate {
 
     getFaerunDateString() {
         const festival = this.getFestival();
-        return festival ? `[Festival] ${festival}` : `${this.realDate.day} ${this.faerunMonth}`;
+        return festival ? `[Festival] ${festival}` : `${this.getDay()} ${this.faerunMonth}`;
     }
 
     getFaerunYear() {
@@ -75,7 +83,7 @@ class FaerunDate {
         const yearPart = this.getFaerunYear() ? ` ${this.getFaerunYear()} DR` : "";
         return festival
             ? `${festival} – Season: ${this.getSeason()}`
-            : `${weekday}, ${this.realDate.day} ${this.faerunMonth}${yearPart} – Season: ${this.getSeason()}`;
+            : `${weekday}, ${this.getDay()} ${this.faerunMonth}${yearPart} – Season: ${this.getSeason()}`;
     }
 
     static parse(dateString, options = {}) {
