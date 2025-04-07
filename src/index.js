@@ -8,12 +8,12 @@ class FaerunDate {
     ];
 
     static FESTIVALS = [
-        { name: "Midwinter", day: 1, month: 2 },
-        { name: "Greengrass", day: 1, month: 4 },
-        { name: "Midsummer", day: 1, month: 7 },
-        { name: "Highharvestide", day: 27, month: 9 },
-        { name: "Feast of the Moon", day: 1, month: 11 },
-        { name: "Shieldmeet", day: 2, month: 7, leapYearOnly: true }
+        { name: "Midwinter", day: '01', month: 2 },
+        { name: "Greengrass", day: '01', month: 4 },
+        { name: "Midsummer", day: '01', month: 7 },
+        { name: "Highharvestide", day: '27', month: 9 },
+        { name: "Feast of the Moon", day: '01', month: 11 },
+        { name: "Shieldmeet", day: '02', month: 7, leapYearOnly: true }
     ];
 
     static SEASONS = [
@@ -70,12 +70,10 @@ class FaerunDate {
     }
 
     toLocaleString() {
-        const weekday = this.getWeekday();
         const festival = this.getFestival();
+        const weekday = festival ? festival : this.getWeekday();
         const yearPart = this.getFaerunYear() ? ` ${this.getFaerunYear()} DR` : "";
-        return festival
-            ? `${festival} – Season: ${this.getSeason()}`
-            : `${weekday}, ${this.realDate.day} ${this.faerunMonth}${yearPart} – Season: ${this.getSeason()}`;
+        return `${weekday}, ${this.realDate.day} ${this.faerunMonth}${yearPart} – Season: ${this.getSeason()}`;
     }
 
     static parse(dateString, options = {}) {
