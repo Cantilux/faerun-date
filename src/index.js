@@ -69,16 +69,36 @@ class FaerunDate {
         return this.customFaerunYear ?? null;
     }
 
+    getWeekOfYear() {
+        const { day, month, year } = this.realDate;
+        const leap = FaerunDate.isLeapYear(year);
+        const daysFromMonths = (month - 1) * 30;
+        const festivalsBefore = FaerunDate.FESTIVALS
+            .filter(f =>
+                f.month < month || (f.month === month && parseInt(f.day) < day)
+            )
+            .filter(f => !f.leapYearOnly || leap)
+            .length;
+        const dayOfYear = daysFromMonths + day + festivalsBefore;
+        return Math.floor((dayOfYear - 1) / 7) + 1;
+    }
+
+
     toLocaleString() {
         const festival = this.getFestival();
         const weekday = festival ? festival : this.getWeekday();
         const yearPart = this.getFaerunYear() ? ` ${this.getFaerunYear()} DR` : "";
-        return `${weekday}, ${this.realDate.day} ${this.faerunMonth}${yearPart} – Season: ${this.getSeason()}`;
+        const week = this.getWeekOfYear();
+        return `${weekday}, ${this.realDate.day} ${this.faerunMonth}${yearPart} – Season: ${this.getSeason()} – Week ${week}`;
     }
 
     static parse(dateString, options = {}) {
         const date = new Date(dateString);
         return new FaerunDate(date, options);
+    }
+
+    static toString(faerunDate) {
+        return faerunDate.toLocaleString();
     }
 }
 
