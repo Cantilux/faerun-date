@@ -11,10 +11,11 @@ faerun-date is a JavaScript library that transforms standard dates into the cale
 
 ## ✨ Features
 
-- Maps standard JavaScript `Date` objects to the Faerûn calendar
-- Handles months, weekdays (10-day tendays), and seasons
-- Recognizes special Faerûnian holidays (e.g. Greengrass, Midwinter)
-- Supports leap years and parsing from date strings
+- 📅 Converts real-world dates to Faerûn calendar dates
+- 🗓️ Supports Faerûn-specific months and festivals
+- 🌱 Includes seasonal calculation (Spring, Summer, Autumn, Winter)
+- 📆 Week number support: calculates the week of the year (1–53)
+- 🕊️ Leap years (with Shieldmeet) fully supported
 
 ---
 
@@ -35,75 +36,72 @@ bun add faerun-date
 ## 🧙 Usage
 
 ```js
-import FaerunDate from 'faerun-date'
+import { FaerunDate } from 'faerun-date';
 
-// Use current date without specifying a Faerûn year
-const today = new FaerunDate()
-console.log(today.toLocaleString())
-// → "Far, 4 Alturiak – Season: Deepwinter"
+const date = new Date(1492, 4, 5); // 5 Mirtul 1492 DR (month is 0-based)
+const faeDate = new FaerunDate(date);
 
-// Use a specific real-world date and assign a Faerûn year
-const greengrass = new FaerunDate(new Date(2025, 3, 1), { faerunYear: 1493 })
-console.log(greengrass.toLocaleString())
-// → "Sar, 1 Mirtul 1493 DR – Season: Spring"
+console.log(faeDate.toLocaleString());
+// "Godsday, 5 Mirtul 1492 DR – Season: Spring – Week 19"
+
+console.log(faeDate.getWeekOfYear());
+// 19
 ```
 
 ## 📚 API
 
-### `new FaerunDate(date?: Date, options?: { faerunYear?: number })`
+### `new FaerunDate(date)`
 
-Creates a Faerûnian date object.  
-- If no `Date` is provided, the current system date is used.
-- Optionally, you can pass a custom `faerunYear` (e.g. `1493`).
+Creates a new Faerûn date from a real-world `Date` object or a structured object with `day`, `month`, and `year`.
 
 ---
 
-### `getFaerunDateString(): string`
+### `toLocaleString()`
 
-Returns the Faerûnian date in readable format.  
-- If it's a holiday, returns `[Festival] <name>`  
-- Otherwise, returns `<day> <month>`
+Returns a human-readable string representing the Faerûn date.
 
----
+**Example:**
 
-### `getWeekday(): string`
-
-Returns the name of the day in the **10-day tenday cycle** of Faerûn.
+```
+Godsday, 5 Mirtul 1492 DR – Season: Spring – Week 19
+```
 
 ---
 
-### `getSeason(): string`
+### `getWeekday()`
 
-Returns the season based on the month:  
-- `"Spring"`, `"Summer"`, `"Autumn"`, `"Winter"` or `"Deepwinter"`
-
----
-
-### `getFestival(): string | null`
-
-Returns the name of the festival for that day, if it exists.  
-Returns `null` otherwise.
+Returns the name of the day of the week  
+(e.g. `Godsday`, `Earthday`, `Kythorn`, etc.)
 
 ---
 
-### `getFaerunYear(): number | null`
+### `getSeason()`
 
-Returns the custom Faerûn year passed in the constructor, or `null` if none was provided.
-
----
-
-### `toLocaleString(): string`
-
-Returns a full formatted Faerûnian date string.  
-Example:  
-- With year → `"Zor, 1 Mirtul 1493 DR – Season: Spring"`
-- Without year → `"Zor, 1 Mirtul – Season: Spring"`
+Returns the current season:  
+`Winter`, `Spring`, `Summer`, or `Autumn`.
 
 ---
 
-### `FaerunDate.parse(dateString: string, options?: { faerunYear?: number }): FaerunDate`
+### `getFaerunYear()`
 
-Creates a FaerunDate instance from a string (e.g. `"2025-04-01"`), with optional `faerunYear`.
+Returns the current year in Dale Reckoning (DR).
+
+---
+
+### `getFestival()`
+
+Returns the name of the festival (e.g. `Greengrass`, `Midwinter`)  
+if the date matches one. Returns `null` otherwise.
+
+---
+
+### `getWeekOfYear()`
+
+Returns the week number in the Faerûn calendar year.
+
+- Week 1 starts on 1 Hammer
+- Festivals are included in the day/week count
+- Leap years (with *Shieldmeet*) are supported
 
 ## 📜 License
 
