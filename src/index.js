@@ -8,12 +8,12 @@ class FaerunDate {
     ];
 
     static FESTIVALS = [
-        { name: "Midwinter", day: '01', month: 2 },
-        { name: "Greengrass", day: '01', month: 4 },
-        { name: "Midsummer", day: '01', month: 7 },
-        { name: "Highharvestide", day: '27', month: 9 },
-        { name: "Feast of the Moon", day: '01', month: 11 },
-        { name: "Shieldmeet", day: '02', month: 7, leapYearOnly: true }
+        { name: "Midwinter", day: 1, month: 2 },
+        { name: "Greengrass", day: 1, month: 4 },
+        { name: "Midsummer", day: 1, month: 7 },
+        { name: "Highharvestide", day: 27, month: 9 },
+        { name: "Feast of the Moon", day: 1, month: 11 },
+        { name: "Shieldmeet", day: 2, month: 7, leapYearOnly: true }
     ];
 
     static SEASONS = [
@@ -30,7 +30,8 @@ class FaerunDate {
 
     constructor(date, options = {}) {
         const inputDate = date instanceof Date ? date : new Date();
-        const day = String(inputDate.getDate()).padStart(2, '0');
+        // const day = String(inputDate.getDate()).padStart(2, '0');
+        const day = inputDate.getDate();
         const month = inputDate.getMonth() + 1;
         const year = inputDate.getFullYear();
 
@@ -62,7 +63,8 @@ class FaerunDate {
 
     getFaerunDateString() {
         const festival = this.getFestival();
-        return festival ? `[Festival] ${festival}` : `${this.realDate.day} ${this.faerunMonth}`;
+        const formattedDay = String(this.realDate.day).padStart(2, '0');
+        return festival ? `[Festival] ${festival}` : `${formattedDay} ${this.faerunMonth}`;
     }
 
     getFaerunYear() {
@@ -89,7 +91,8 @@ class FaerunDate {
         const weekday = festival ? festival : this.getWeekday();
         const yearPart = this.getFaerunYear() ? ` ${this.getFaerunYear()} DR` : "";
         const week = this.getWeekOfYear();
-        return `${weekday}, ${this.realDate.day} ${this.faerunMonth}${yearPart} – Season: ${this.getSeason()} – Week ${week}`;
+        const formattedDay = String(this.realDate.day).padStart(2, '0');
+        return `${weekday}, ${formattedDay} ${this.faerunMonth}${yearPart} – Season: ${this.getSeason()} – Week ${week}`;
     }
 
     static parse(dateString, options = {}) {
