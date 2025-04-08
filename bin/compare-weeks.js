@@ -1,6 +1,22 @@
 #!/usr/bin/env node
 
-// Compare Gregorian weeks with Faerûn tendays
+// CLI: faerun-compare-weeks
+
+// --year 2025
+// --weeks 30
+
+const args = process.argv.slice(2);
+let targetYear = new Date().getFullYear();
+let totalWeeks = 20;
+
+args.forEach((arg, i) => {
+    if (arg === '--year' && args[i + 1]) {
+        targetYear = parseInt(args[i + 1], 10);
+    }
+    if (arg === '--weeks' && args[i + 1]) {
+        totalWeeks = parseInt(args[i + 1], 10);
+    }
+});
 
 function getGregorianWeekOfYear(date) {
     const startOfYear = new Date(date.getFullYear(), 0, 1);
@@ -39,9 +55,9 @@ function getFaerunWeekOfYear(date) {
     return Math.floor((dayOfYear - 1) / 10) + 1;
 }
 
-console.log("Gregorian Week → Faerûn Tenday Correspondence:");
-for (let week = 1; week <= 20; week++) {
-    const date = new Date(new Date().getFullYear(), 0, (week - 1) * 7 + 1);
+console.log(`Gregorian Week → Faerûn Tenday Correspondence for year ${targetYear}`);
+for (let week = 1; week <= totalWeeks; week++) {
+    const date = new Date(targetYear, 0, (week - 1) * 7 + 1); // Monday of that week
     const gregWeek = getGregorianWeekOfYear(date);
     const faerunWeek = getFaerunWeekOfYear(date);
     console.log(`Week ${String(gregWeek).padStart(2, '0')} → Tenday ${String(faerunWeek).padStart(2, '0')} (${date.toDateString()})`);

@@ -103,6 +103,46 @@ Returns the week number in the Faerûn calendar year.
 - Festivals are included in the day/week count
 - Leap years (with *Shieldmeet*) are supported
 
+## 🧰 CLI Tool: Compare Weeks
+
+This package includes a CLI tool to compare **Gregorian calendar weeks** with **Faerûn tendays**.
+
+Useful for Dungeon Masters who want to align real-world weeks with in-game Faerûn time.
+
+### 🔧 Usage
+
+After installing the package (or using `bun link` / `npm link`):
+
+```bash
+npx faerun-compare-weeks
+# or with custom options:
+npx faerun-compare-weeks --year 1489 --weeks 30
+```
+
+You can also run it directly if you're developing locally:
+
+```bash
+bun run bin/compare-weeks.js --year 1491 --weeks 15
+```
+
+### 🧩 Options
+
+- `--year <YYYY>` – The Gregorian year to compare (default: current year)
+- `--weeks <N>` – Number of Gregorian weeks to display (default: 20)
+
+### 📋 Output Example
+
+```text
+Gregorian Week → Faerûn Tenday Correspondence for year 1489
+Week 01 → Tenday 01 (Mon Jan 01 1489)
+Week 02 → Tenday 02 (Mon Jan 08 1489)
+Week 03 → Tenday 03 (Mon Jan 15 1489)
+...
+Week 15 → Tenday 10 (Mon Apr 07 1489)
+```
+
+🧙 Ideal for planning weekly D&D sessions, synchronizing downtime, or tracking Faerûn time progression alongside real-world calendars.
+
 ## 📜 License
 
 Released under the [MIT License](./LICENSE).  
