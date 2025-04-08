@@ -82,7 +82,8 @@ class FaerunDate {
             .filter(f => !f.leapYearOnly || leap)
             .length;
         const dayOfYear = daysFromMonths + day + festivalsBefore;
-        return Math.floor((dayOfYear - 1) / 7) + 1;
+        // Faerûn weeks are 10-day units (Tendays)
+        return Math.floor((dayOfYear - 1) / 10) + 1;
     }
 
 
