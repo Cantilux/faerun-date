@@ -62,7 +62,7 @@ Returns a human-readable string representing the Faerûn date.
 
 **Example:**
 
-```
+```text
 Godsday, 5 Mirtul 1492 DR – Season: Spring – Week 19
 ```
 
@@ -72,6 +72,12 @@ Godsday, 5 Mirtul 1492 DR – Season: Spring – Week 19
 
 Returns the name of the day of the week  
 (e.g. `Godsday`, `Earthday`, `Kythorn`, etc.)
+
+---
+
+### `getMonth()`
+
+Returns the name of the month
 
 ---
 

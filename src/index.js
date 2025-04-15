@@ -61,6 +61,10 @@ class FaerunDate {
         return FaerunDate.WEEKDAYS[dayOfYear % 10];
     }
 
+    getMonth() {
+        return this.faerunMonth;
+    }
+
     getFaerunDateString() {
         const festival = this.getFestival();
         const formattedDay = String(this.realDate.day).padStart(2, '0');
