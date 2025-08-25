@@ -50,15 +50,9 @@ jobs:
           const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
           const version = process.env.VERSION || pkg.version;
 
-          pkg.name = '@cantilux/faerun-date';
+          pkg.name = '@cantilux/faerun-date';          // <-- scoped
           pkg.version = version;
-
           pkg.publishConfig = { registry: 'https://npm.pkg.github.com' };
-
-          pkg.repository = pkg.repository || {
-            type: 'git',
-            url: 'git+https://github.com/Cantilux/faerun-date.git'
-          };
 
           if (pkg.private) delete pkg.private;
 
@@ -67,9 +61,10 @@ jobs:
 
           cat > dist-ghpkg/.npmrc <<EONPM
           @cantilux:registry=https://npm.pkg.github.com
+          //npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
           always-auth=true
           EONPM
 
           cd dist-ghpkg
-
           npm publish
+
