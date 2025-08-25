@@ -19,8 +19,7 @@ jobs:
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
-          cache: 'npm'
-          
+
       - run: npm install --no-audit --no-fund
 
       - run: npm run release
