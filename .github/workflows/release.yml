@@ -19,11 +19,46 @@ jobs:
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
-          
 
       - run: npm install --no-audit --no-fund
 
-      - run: npm run release
+      - name: Publish to npm (semantic-release)
+        run: npm run release
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish to GitHub Packages (scoped)
+        env:
+          OWNER_SCOPE: cantilux
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+
+          VERSION=$(node -p "require('./package.json').version")
+          echo "Detected version: $VERSION"
+
+          rm -rf dist-ghpkg
+          mkdir dist-ghpkg
+
+          cp -R src bin LICENSE README.md package.json dist-ghpkg/ 2>/dev/null || true
+
+          node - <<'EOF'
+          const fs = require('fs');
+          const path = require('path');
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          const owner = process.env.OWNER_SCOPE;
+          const version = process.env.VERSION || pkg.version;
+          pkg.name = `@${owner}/faerun-date`;
+          pkg.version = version;
+          pkg.publishConfig = { registry: "https://npm.pkg.github.com" };
+          fs.writeFileSync(path.join('dist-ghpkg', 'package.json'), JSON.stringify(pkg, null, 2));
+          EOF
+
+          cat > dist-ghpkg/.npmrc <<EONPM
+          //npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
+          @${OWNER_SCOPE}:registry=https://npm.pkg.github.com
+          EONPM
+
+          cd dist-ghpkg
+          npm publish --access public
