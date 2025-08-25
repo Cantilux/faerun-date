@@ -11,6 +11,7 @@ jobs:
       packages: write
       issues: write
       pull-requests: write
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -31,12 +32,11 @@ jobs:
 
       - name: Publish to GitHub Packages (scoped)
         env:
-          OWNER_SCOPE: Cantilux
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -e
     
-          OWNER_SCOPE_LC=$(echo "$OWNER_SCOPE_LC" | tr '[:upper:]' '[:lower:]')
+          OWNER_SCOPE_LC="$(echo "$GITHUB_REPOSITORY" | cut -d'/' -f1 | tr '[:upper:]' '[:lower:]')"
           echo "Owner scope (lowercase): @$OWNER_SCOPE_LC"
     
           VERSION=$(node -p "require('./package.json').version")
@@ -51,7 +51,7 @@ jobs:
           const fs = require('fs');
           const path = require('path');
           const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-          const owner = process.env.OWNER_SCOPE_LC;         // lowercase enforced
+          const owner = process.env.OWNER_SCOPE_LC;
           const version = process.env.VERSION || pkg.version;
     
           pkg.name = `@${owner}/faerun-date`;
@@ -63,6 +63,7 @@ jobs:
     
           cat > dist-ghpkg/.npmrc <<EONPM
           @${OWNER_SCOPE_LC}:registry=https://npm.pkg.github.com
+          always-auth=true
           EONPM
     
           cd dist-ghpkg
