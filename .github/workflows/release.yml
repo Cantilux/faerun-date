@@ -36,9 +36,6 @@ jobs:
         run: |
           set -e
     
-          OWNER_SCOPE_LC="$(echo "$GITHUB_REPOSITORY" | cut -d'/' -f1 | tr '[:upper:]' '[:lower:]')"
-          echo "Owner scope (lowercase): @$OWNER_SCOPE_LC"
-    
           VERSION=$(node -p "require('./package.json').version")
           echo "Detected version: $VERSION"
     
@@ -51,10 +48,9 @@ jobs:
           const fs = require('fs');
           const path = require('path');
           const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-          const owner = process.env.OWNER_SCOPE_LC;
           const version = process.env.VERSION || pkg.version;
     
-          pkg.name = `@${owner}/faerun-date`;
+          pkg.name = `cantilux/faerun-date`;
           pkg.version = version;
           pkg.publishConfig = { registry: "https://npm.pkg.github.com" };
     
@@ -62,7 +58,7 @@ jobs:
           EOF
     
           cat > dist-ghpkg/.npmrc <<EONPM
-          @${OWNER_SCOPE_LC}:registry=https://npm.pkg.github.com
+          @cantilux:registry=https://npm.pkg.github.com
           always-auth=true
           EONPM
     
