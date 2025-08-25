@@ -35,32 +35,41 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -e
-    
+
           VERSION=$(node -p "require('./package.json').version")
           echo "Detected version: $VERSION"
-    
+
           rm -rf dist-ghpkg
           mkdir dist-ghpkg
-    
+
           cp -R src bin LICENSE README.md package.json dist-ghpkg/ 2>/dev/null || true
-    
+
           node - <<'EOF'
           const fs = require('fs');
           const path = require('path');
           const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
           const version = process.env.VERSION || pkg.version;
-    
-          pkg.name = `cantilux/faerun-date`;
+
+          pkg.name = '@cantilux/faerun-date';
           pkg.version = version;
-          pkg.publishConfig = { registry: "https://npm.pkg.github.com" };
-    
+
+          pkg.publishConfig = { registry: 'https://npm.pkg.github.com' };
+
+          pkg.repository = pkg.repository || {
+            type: 'git',
+            url: 'git+https://github.com/Cantilux/faerun-date.git'
+          };
+
+          if (pkg.private) delete pkg.private;
+
           fs.writeFileSync(path.join('dist-ghpkg', 'package.json'), JSON.stringify(pkg, null, 2));
           EOF
-    
+
           cat > dist-ghpkg/.npmrc <<EONPM
           @cantilux:registry=https://npm.pkg.github.com
           always-auth=true
           EONPM
-    
+
           cd dist-ghpkg
-          npm publish --access public
+
+          npm publish
