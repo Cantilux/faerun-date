@@ -1,4 +1,5 @@
 # 📅 faerun-date
+[![Release](https://github.com/Cantilux/faerun-date/actions/workflows/release.yml/badge.svg)](https://github.com/Cantilux/faerun-date/actions/workflows/release.yml)
 
 Convert real-world dates into the **Forgotten Realms** (Faerûn) calendar format.  
 Inspired by Dungeons & Dragons and the Harptos calendar.
