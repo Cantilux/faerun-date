@@ -3,9 +3,10 @@
 Convert real-world dates into the **Forgotten Realms** (Faerûn) calendar format.  
 Inspired by Dungeons & Dragons and the Harptos calendar.
 
-faerun-date is a JavaScript library that transforms standard dates into the calendar system of Faerûn, the world of the Forgotten Realms (Dungeons & Dragons). It includes accurate mapping of months, 10-day weeks, seasonal cycles, and unique Faerûnian holidays like Greengrass and Midsummer.
+`faerun-date` is a JavaScript library that transforms standard dates into the calendar system of Faerûn.  
+It includes months, 10-day weeks (tendays), seasonal cycles, and Faerûnian holidays like Greengrass and Midsummer.
 
-> Perfect for RPG tools, worldbuilding projects, and immersive D&D experiences.
+> ⚠️ Note: This is a **simplified model** of the Harptos calendar. All months are fixed at 30 days, holidays are added to the count, and leap years are every 4 years (Shieldmeet). Day names are placeholders, not canonical.
 
 ---
 
@@ -13,141 +14,149 @@ faerun-date is a JavaScript library that transforms standard dates into the cale
 
 - 📅 Converts real-world dates to Faerûn calendar dates
 - 🗓️ Supports Faerûn-specific months and festivals
-- 🌱 Includes seasonal calculation (Spring, Summer, Autumn, Winter)
-- 📆 Week number support: calculates the week of the year (1–53)
-- 🕊️ Leap years (with Shieldmeet) fully supported
+- 🌱 Seasonal calculation (Spring, Summer, Autumn, Winter)
+- 📆 Week number support (Faerûn “tendays”)
+- 🕊️ Leap years with *Shieldmeet* (every 4 years, simplified)
 
 ---
 
 ## 📦 Installation
 
-### With npm
-
 ```bash
 npm install faerun-date
-```
-
-### With bun
-
-```bash
+# or
 bun add faerun-date
 ```
+
+---
 
 ## 🧙 Usage
 
 ```js
-import { FaerunDate } from 'faerun-date';
+import FaerunDate from 'faerun-date';
 
-const date = new Date(1492, 4, 5); // 5 Mirtul 1492 DR (month is 0-based)
-const faeDate = new FaerunDate(date);
+const date = new Date(1492, 4, 5); // 5 Mirtul 1492 (months are 0-based)
+const faeDate = new FaerunDate(date, { faerunYear: 1492 });
 
 console.log(faeDate.toLocaleString());
-// "Godsday, 5 Mirtul 1492 DR – Season: Spring – Week 19"
+// Example: "Far, 05 Mirtul 1492 DR – Season: Spring – Week 19"
 
 console.log(faeDate.getWeekOfYear());
 // 19
 ```
 
+---
+
 ## 📚 API
 
-### `new FaerunDate(date)`
+### `new FaerunDate(date, options?)`
 
-Creates a new Faerûn date from a real-world `Date` object or a structured object with `day`, `month`, and `year`.
+Creates a new Faerûn date from a real-world `Date`.  
+Options: `{ faerunYear?: number }`
 
 ---
 
 ### `toLocaleString()`
+Returns a human-readable string:
 
-Returns a human-readable string representing the Faerûn date.
-
-**Example:**
-
-```text
-Godsday, 5 Mirtul 1492 DR – Season: Spring – Week 19
+```
+Far, 05 Mirtul 1492 DR – Season: Spring – Week 19
 ```
 
 ---
 
 ### `getWeekday()`
+Returns the name of the current day in the 10-day week cycle:  
+`Sul`, `Far`, `Tar`, `Sar`, `Rai`, `Zor`, `Kyth`, `Hamar`, `Ith`, `Alt`.
 
-Returns the name of the day of the week  
-(e.g. `Godsday`, `Earthday`, `Kythorn`, etc.)
+> Note: These labels are **not canon**; they represent tendays.
 
 ---
 
 ### `getMonth()`
-
-Returns the name of the month
+Returns the Faerûnian month name.
 
 ---
 
 ### `getSeason()`
-
-Returns the current season:  
+Returns the season:  
 `Winter`, `Spring`, `Summer`, or `Autumn`.
 
 ---
 
 ### `getFaerunYear()`
-
-Returns the current year in Dale Reckoning (DR).
+Returns the current year in Dale Reckoning (DR), if provided via options.  
+Otherwise returns `null`.
 
 ---
 
 ### `getFestival()`
-
-Returns the name of the festival (e.g. `Greengrass`, `Midwinter`)  
-if the date matches one. Returns `null` otherwise.
+Returns the name of the festival (`Greengrass`, `Midwinter`, etc.)  
+if the date matches one, otherwise `null`.
 
 ---
 
 ### `getWeekOfYear()`
+Returns the week (tenday) number of the year.
 
-Returns the week number in the Faerûn calendar year.
+---
 
-- Week 1 starts on 1 Hammer
-- Festivals are included in the day/week count
-- Leap years (with *Shieldmeet*) are supported
+### `getFaerunDateString()`
+Returns a calendar-style string:  
+- `[Festival] Greengrass` if the date is a festival  
+- `05 Mirtul` otherwise
+
+---
+
+### `static isLeapYear(year)`
+Returns `true` if divisible by 4.
+
+---
+
+### `static parse(dateString, options?)`
+Constructs a `FaerunDate` from a date string.
+
+---
+
+### `static toString(faerunDate)`
+Shortcut to `.toLocaleString()`.
+
+---
 
 ## 🧰 CLI Tool: Compare Weeks
 
-This package includes a CLI tool to compare **Gregorian calendar weeks** with **Faerûn tendays**.
-
-Useful for Dungeon Masters who want to align real-world weeks with in-game Faerûn time.
-
-### 🔧 Usage
-
-After installing the package (or using `bun link` / `npm link`):
+This package includes a CLI tool to compare **Gregorian weeks** with **Faerûn tendays**.
 
 ```bash
-npx faerun-compare-weeks
-# or with custom options:
-npx faerun-compare-weeks --year 1489 --weeks 30
+npx faerun-compare-weeks --year 1489 --weeks 10
 ```
 
-You can also run it directly if you're developing locally:
+Example output:
 
-```bash
-bun run bin/compare-weeks.js --year 1491 --weeks 15
 ```
-
-### 🧩 Options
-
-- `--year <YYYY>` – The Gregorian year to compare (default: current year)
-- `--weeks <N>` – Number of Gregorian weeks to display (default: 20)
-
-### 📋 Output Example
-
-```text
 Gregorian Week → Faerûn Tenday Correspondence for year 1489
 Week 01 → Tenday 01 (Mon Jan 01 1489)
 Week 02 → Tenday 02 (Mon Jan 08 1489)
-Week 03 → Tenday 03 (Mon Jan 15 1489)
 ...
-Week 15 → Tenday 10 (Mon Apr 07 1489)
 ```
 
-🧙 Ideal for planning weekly D&D sessions, synchronizing downtime, or tracking Faerûn time progression alongside real-world calendars.
+### Options
+- `--year <YYYY>` – Starting Gregorian year (default: current)
+- `--weeks <N>` – Number of weeks to display (default: 20)
+
+> Note: Gregorian weeks in the CLI are calculated with a simplified formula (`new Date(year, 0, (week-1)*7+1)`); not ISO‑8601.
+
+---
+
+## ⚠️ Limitations
+
+- All months are fixed at 30 days (simplification).  
+- Leap years are every 4 years (Shieldmeet).  
+- Day names are placeholders, not canon.  
+- Faerûn year (DR) must be passed manually in `options`.  
+- Some lore-specific details of Harptos are not modeled.
+
+---
 
 ## 📜 License
 
