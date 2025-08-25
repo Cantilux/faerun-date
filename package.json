@@ -20,7 +20,7 @@
         "faerun-compare-weeks": "./bin/compare-weeks.js"
     },
     "scripts": {
-        "release": "semantic-release"
+        "release": "semantic-release",
         "release:patch": "npm version patch --sign-git-tag && git push && git push --follow-tags && npm publish --access public",
         "release:minor": "npm version minor --sign-git-tag && git push && git push --follow-tags && npm publish --access public",
         "release:major": "npm version major --sign-git-tag && git push && git push --follow-tags && npm publish --access public"
