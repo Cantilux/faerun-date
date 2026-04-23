@@ -1,0 +1,70 @@
+name: Release
+on:
+  push:
+    branches: [ "master" ]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      issues: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - run: npm install --no-audit --no-fund
+
+      - name: Publish to npm (semantic-release)
+        run: npm run release
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish to GitHub Packages (scoped)
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+
+          VERSION=$(node -p "require('./package.json').version")
+          echo "Detected version: $VERSION"
+
+          rm -rf dist-ghpkg
+          mkdir dist-ghpkg
+
+          cp -R src bin LICENSE README.md package.json dist-ghpkg/ 2>/dev/null || true
+
+          node - <<'EOF'
+          const fs = require('fs');
+          const path = require('path');
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          const version = process.env.VERSION || pkg.version;
+
+          pkg.name = '@cantilux/faerun-date';          // <-- scoped
+          pkg.version = version;
+          pkg.publishConfig = { registry: 'https://npm.pkg.github.com' };
+
+          if (pkg.private) delete pkg.private;
+
+          fs.writeFileSync(path.join('dist-ghpkg', 'package.json'), JSON.stringify(pkg, null, 2));
+          EOF
+
+          cat > dist-ghpkg/.npmrc <<EONPM
+          @cantilux:registry=https://npm.pkg.github.com
+          //npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
+          always-auth=true
+          EONPM
+
+          cd dist-ghpkg
+          npm publish
+

@@ -1,4 +1,7 @@
 # faerun-date
+[![Release](https://github.com/Cantilux/faerun-date/actions/workflows/release.yml/badge.svg)](https://github.com/Cantilux/faerun-date/actions/workflows/release.yml)
+[![npm version](https://img.shields.io/npm/v/faerun-date.svg)](https://www.npmjs.com/package/faerun-date)
+[![GitHub Package](https://img.shields.io/badge/GitHub%20Packages-@cantilux%2Ffaerun--date-24292e)](https://github.com/Cantilux/faerun-date/pkgs/npm/faerun-date)
 
 Canonical JavaScript utilities for the **Calendar of Harptos**, the calendar used across most of Faerun in the Forgotten Realms.
 
