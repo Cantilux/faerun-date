@@ -1,155 +1,152 @@
-# 📅 faerun-date
+# faerun-date
 
-Convert real-world dates into the **Forgotten Realms** (Faerûn) calendar format.  
-Inspired by Dungeons & Dragons and the Harptos calendar.
+Canonical JavaScript utilities for the **Calendar of Harptos**, the calendar used across most of Faerun in the Forgotten Realms.
 
-faerun-date is a JavaScript library that transforms standard dates into the calendar system of Faerûn, the world of the Forgotten Realms (Dungeons & Dragons). It includes accurate mapping of months, 10-day weeks, seasonal cycles, and unique Faerûnian holidays like Greengrass and Midsummer.
+This package models Harptos as:
 
-> Perfect for RPG tools, worldbuilding projects, and immersive D&D experiences.
+- 12 months of 30 days
+- 5 intercalary festivals: `Midwinter`, `Greengrass`, `Midsummer`, `Highharvestide`, `Feast of the Moon`
+- `Shieldmeet` after `Midsummer` every four years
+- 3 tendays per month
 
----
+Unlike the previous implementation, festivals are treated as standalone days between months, not as regular month dates.
 
-## ✨ Features
-
-- 📅 Converts real-world dates to Faerûn calendar dates
-- 🗓️ Supports Faerûn-specific months and festivals
-- 🌱 Includes seasonal calculation (Spring, Summer, Autumn, Winter)
-- 📆 Week number support: calculates the week of the year (1–53)
-- 🕊️ Leap years (with Shieldmeet) fully supported
-
----
-
-## 📦 Installation
-
-### With npm
+## Installation
 
 ```bash
 npm install faerun-date
 ```
 
-### With bun
-
-```bash
-bun add faerun-date
-```
-
-## 🧙 Usage
+## Usage
 
 ```js
-import { FaerunDate } from 'faerun-date';
+import { HarptosDate, fromGregorian, fromHarptos } from "faerun-date";
 
-const date = new Date(1492, 4, 5); // 5 Mirtul 1492 DR (month is 0-based)
-const faeDate = new FaerunDate(date);
+const gregorian = fromGregorian(new Date(2025, 1, 1), { drYear: 1497 });
+console.log(gregorian.toString());
+// "1 Alturiak 1497 DR"
 
-console.log(faeDate.toLocaleString());
-// "Godsday, 5 Mirtul 1492 DR – Season: Spring – Week 19"
+const festival = fromGregorian(new Date(2025, 0, 31), { drYear: 1497 });
+console.log(festival.toString());
+// "Midwinter 1497 DR"
 
-console.log(faeDate.getWeekOfYear());
-// 19
+const harptos = fromHarptos({ year: 1496, festival: "Shieldmeet" });
+console.log(harptos.toLocaleString());
+// "Shieldmeet 1496 DR - Summer festival"
+
+const direct = new HarptosDate({ year: 1492, month: "Mirtul", day: 5 });
+console.log(direct.toLocaleString());
+// "5 Mirtul 1492 DR - Spring - Tenday 13, Day 5"
+
+const ordinal = new HarptosDate("2026-04-24", { drYear: 1498 });
+console.log(ordinal.toString());
+// "22 Tarsakh 1498 DR"
 ```
 
-## 📚 API
+## API
 
-### `new FaerunDate(date)`
+### `new HarptosDate(input, options?)`
 
-Creates a new Faerûn date from a real-world `Date` object or a structured object with `day`, `month`, and `year`.
+Accepts either:
 
----
+- a Gregorian `Date`
+- a Gregorian date string such as `2026-04-24`
+- a Harptos object such as `{ year, month, day }`
+- a Harptos festival object such as `{ year, festival: "Greengrass" }`
+- a Harptos ordinal object such as `{ year, dayOfYear: 122 }`
 
-### `toLocaleString()`
+`options`:
 
-Returns a human-readable string representing the Faerûn date.
+- `drYear`: explicit Harptos year to use when converting from Gregorian
+- `faerunYear`: legacy alias for `drYear`
+- `yearOffset`: offset added to the Gregorian year when `drYear` is omitted
 
-**Example:**
+### `HarptosDate.fromGregorian(input, options?)`
 
-```text
-Godsday, 5 Mirtul 1492 DR – Season: Spring – Week 19
-```
+Converts a Gregorian date to the equivalent ordinal day in Harptos for that year length.
 
----
+### `HarptosDate.fromHarptos(input, options?)`
 
-### `getWeekday()`
+Creates a canonical Harptos date from month/day, festival, or `dayOfYear`.
 
-Returns the name of the day of the week  
-(e.g. `Godsday`, `Earthday`, `Kythorn`, etc.)
+### `isFestival()`
 
----
-
-### `getMonth()`
-
-Returns the name of the month
-
----
-
-### `getSeason()`
-
-Returns the current season:  
-`Winter`, `Spring`, `Summer`, or `Autumn`.
-
----
-
-### `getFaerunYear()`
-
-Returns the current year in Dale Reckoning (DR).
-
----
+Returns `true` when the date is one of the intercalary festivals.
 
 ### `getFestival()`
 
-Returns the name of the festival (e.g. `Greengrass`, `Midwinter`)  
-if the date matches one. Returns `null` otherwise.
+Returns the festival name or `null`.
 
----
+### `getMonth()`
+
+Returns the Harptos month name or `null` for festivals.
+
+### `getDay()`
+
+Returns the day of the month or `null` for festivals.
+
+### `getDayOfYear()`
+
+Returns the ordinal day in the Harptos year, including festivals.
+
+### `getTenday()`
+
+Returns the tenday number for month dates. Festivals return `null` because they are outside the tenday structure.
+
+### `getDayOfTenday()`
+
+Returns the day number within the current tenday for month dates. Festivals return `null`.
 
 ### `getWeekOfYear()`
 
-Returns the week number in the Faerûn calendar year.
+Legacy alias of `getTenday()`.
 
-- Week 1 starts on 1 Hammer
-- Festivals are included in the day/week count
-- Leap years (with *Shieldmeet*) are supported
+### `getWeekday()`
 
-## 🧰 CLI Tool: Compare Weeks
+Legacy helper that returns a descriptive label such as `5th day of the tenday`. Harptos does not assign formal weekday names to individual days.
 
-This package includes a CLI tool to compare **Gregorian calendar weeks** with **Faerûn tendays**.
+### `getSeason()`
 
-Useful for Dungeon Masters who want to align real-world weeks with in-game Faerûn time.
+Returns `Winter`, `Spring`, `Summer`, or `Autumn`.
 
-### 🔧 Usage
+### `toString()`
 
-After installing the package (or using `bun link` / `npm link`):
+Canonical string form:
+
+- month date: `5 Mirtul 1492 DR`
+- festival: `Shieldmeet 1496 DR`
+
+### `toLocaleString()`
+
+Extended display form:
+
+- month date: `5 Mirtul 1492 DR - Spring - Tenday 13, Day 5`
+- festival: `Shieldmeet 1496 DR - Summer festival`
+
+### `toObject()`
+
+Returns a plain object with the canonical normalized fields.
+
+## CLI
+
+The package ships with a small CLI:
 
 ```bash
-npx faerun-compare-weeks
-# or with custom options:
-npx faerun-compare-weeks --year 1489 --weeks 30
+npx faerun-compare-weeks --year 2025 --weeks 12 --dr-year 1497
 ```
 
-You can also run it directly if you're developing locally:
+Options:
+
+- `--year <YYYY>`: Gregorian year to inspect
+- `--weeks <N>`: number of Gregorian weeks to print
+- `--dr-year <YYYY>`: Harptos year label to print
+
+## Development
 
 ```bash
-bun run bin/compare-weeks.js --year 1491 --weeks 15
+npm test
 ```
 
-### 🧩 Options
+## License
 
-- `--year <YYYY>` – The Gregorian year to compare (default: current year)
-- `--weeks <N>` – Number of Gregorian weeks to display (default: 20)
-
-### 📋 Output Example
-
-```text
-Gregorian Week → Faerûn Tenday Correspondence for year 1489
-Week 01 → Tenday 01 (Mon Jan 01 1489)
-Week 02 → Tenday 02 (Mon Jan 08 1489)
-Week 03 → Tenday 03 (Mon Jan 15 1489)
-...
-Week 15 → Tenday 10 (Mon Apr 07 1489)
-```
-
-🧙 Ideal for planning weekly D&D sessions, synchronizing downtime, or tracking Faerûn time progression alongside real-world calendars.
-
-## 📜 License
-
-Released under the [MIT License](./LICENSE).  
-© 2025 Cantilux
+[MIT](./LICENSE)

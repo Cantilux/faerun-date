@@ -1,25 +1,31 @@
 {
     "name": "faerun-date",
     "version": "0.1.9",
-    "description": "Convert real-world dates into the Forgotten Realms (Faerûn) calendar format",
+    "description": "Canonical Harptos calendar utilities for JavaScript",
+    "type": "module",
     "main": "src/index.js",
     "exports": {
-        ".": {
-            "import": "./src/index.js",
-            "require": "./src/index.js"
-        }
+        ".": "./src/index.js"
     },
     "bin": {
         "faerun-compare-weeks": "./bin/compare-weeks.js"
     },
     "scripts": {
+        "test": "node --test",
         "release:patch": "npm version patch --sign-git-tag && git push && git push --follow-tags && npm publish --access public",
         "release:minor": "npm version minor --sign-git-tag && git push && git push --follow-tags && npm publish --access public",
         "release:major": "npm version major --sign-git-tag && git push && git push --follow-tags && npm publish --access public"
     },
+    "files": [
+        "src",
+        "bin",
+        "README.md",
+        "LICENSE"
+    ],
     "keywords": [
         "dnd",
         "forgotten-realms",
+        "harptos",
         "calendar",
         "faerun",
         "date",
