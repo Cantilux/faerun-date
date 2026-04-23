@@ -80,9 +80,18 @@ function parseGregorianString(value) {
 }
 
 function getGregorianDayOfYear(date) {
-    const startOfYear = new Date(date.getFullYear(), 0, 1);
+    const year = date.getFullYear();
+    const startOfYear = Date.UTC(year, 0, 1);
+    const currentDay = Date.UTC(year, date.getMonth(), date.getDate());
     const millisecondsPerDay = 24 * 60 * 60 * 1000;
-    return Math.floor((date - startOfYear) / millisecondsPerDay) + 1;
+    const dayOfYear = Math.floor((currentDay - startOfYear) / millisecondsPerDay) + 1;
+    const maxDayOfYear = isLeapYear(year) ? 366 : 365;
+
+    if (dayOfYear < 1 || dayOfYear > maxDayOfYear) {
+        throw new RangeError(`Computed Gregorian day of year out of range: ${dayOfYear}`);
+    }
+
+    return dayOfYear;
 }
 
 function isLeapYear(year) {
@@ -164,14 +173,20 @@ function createStateFromGregorian(input, options = {}) {
         throw new TypeError("Expected a valid Gregorian Date or date string.");
     }
 
-    const leapYear = isLeapYear(date.getFullYear());
+    const harptosYear = getHarptosYear(options, date.getFullYear());
+    const leapYear = isLeapYear(harptosYear ?? date.getFullYear());
     const entries = getHarptosEntries(leapYear);
     const dayOfYear = getGregorianDayOfYear(date);
     const entry = entries[dayOfYear - 1];
+    if (!entry) {
+        throw new RangeError(
+            `Gregorian day ${dayOfYear} does not exist in Harptos year ${harptosYear}.`
+        );
+    }
 
     return {
         ...entry,
-        harptosYear: getHarptosYear(options, date.getFullYear()),
+        harptosYear,
         source: {
             type: "gregorian",
             date
@@ -186,7 +201,7 @@ function createStateFromHarptos(input, options = {}) {
     }
 
     const harptosYear = getHarptosYear(options, input.year ?? null);
-    const leapYear = isLeapYear(harptosYear ?? 0);
+    const leapYear = typeof harptosYear === "number" && isLeapYear(harptosYear);
     const entries = getHarptosEntries(leapYear);
 
     if (input.dayOfYear != null) {

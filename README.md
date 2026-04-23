@@ -20,6 +20,8 @@ Unlike the previous implementation, festivals are treated as standalone days bet
 npm install faerun-date
 ```
 
+This refactor makes the package ESM-only. CommonJS `require()` is no longer supported on this branch and should be treated as a breaking change for the next release.
+
 ## Usage
 
 ```js
