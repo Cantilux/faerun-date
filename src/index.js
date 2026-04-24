@@ -1,43 +1,14 @@
-const MONTHS = [
-    "Hammer",
-    "Alturiak",
-    "Ches",
-    "Tarsakh",
-    "Mirtul",
-    "Kythorn",
-    "Flamerule",
-    "Eleasis",
-    "Eleint",
-    "Marpenoth",
-    "Uktar",
-    "Nightal"
-];
-
-const FESTIVAL_SPECS = [
-    { name: "Midwinter", afterMonth: "Hammer", season: "Winter" },
-    { name: "Greengrass", afterMonth: "Tarsakh", season: "Spring" },
-    { name: "Midsummer", afterMonth: "Flamerule", season: "Summer" },
-    { name: "Shieldmeet", afterMonth: "Flamerule", season: "Summer", leapYearOnly: true },
-    { name: "Highharvestide", afterMonth: "Eleint", season: "Autumn" },
-    { name: "Feast of the Moon", afterMonth: "Uktar", season: "Winter" }
-];
-
-const MONTH_SEASONS = {
-    Hammer: "Winter",
-    Alturiak: "Winter",
-    Ches: "Spring",
-    Tarsakh: "Spring",
-    Mirtul: "Spring",
-    Kythorn: "Summer",
-    Flamerule: "Summer",
-    Eleasis: "Summer",
-    Eleint: "Autumn",
-    Marpenoth: "Autumn",
-    Uktar: "Autumn",
-    Nightal: "Winter"
-};
-
-const ORDINAL_SUFFIXES = ["th", "st", "nd", "rd"];
+import {
+    DAYS_PER_MONTH,
+    DAYS_PER_TENDAY,
+    FESTIVAL_BY_NAME,
+    FESTIVAL_SPECS,
+    MONTH_INDEX,
+    MONTH_SEASONS,
+    MONTHS,
+    ORDINAL_SUFFIXES,
+    TENDAYS_PER_MONTH
+} from "./harptos-constants.js";
 
 function isValidDate(value) {
     return value instanceof Date && !Number.isNaN(value.getTime());
@@ -79,6 +50,10 @@ function parseGregorianString(value) {
     return isValidDate(parsed) ? parsed : null;
 }
 
+function isLeapYear(year) {
+    return year % 4 === 0;
+}
+
 function getGregorianDayOfYear(date) {
     const year = date.getFullYear();
     const startOfYear = Date.UTC(year, 0, 1);
@@ -94,15 +69,15 @@ function getGregorianDayOfYear(date) {
     return dayOfYear;
 }
 
-function isLeapYear(year) {
-    return year % 4 === 0;
+function getHarptosYearLength(year) {
+    return isLeapYear(year) ? 366 : 365;
 }
 
 function getHarptosEntries(leapYear) {
     const entries = [];
 
     for (const month of MONTHS) {
-        for (let day = 1; day <= 30; day += 1) {
+        for (let day = 1; day <= DAYS_PER_MONTH; day += 1) {
             entries.push({
                 kind: "month-day",
                 month,
@@ -141,12 +116,12 @@ function getHarptosEntries(leapYear) {
             };
         }
 
-        const monthIndex = MONTHS.indexOf(entry.month);
+        const monthIndex = MONTH_INDEX[entry.month];
         return {
             ...entry,
             dayOfYear: index + 1,
-            tenday: monthIndex * 3 + Math.floor((entry.day - 1) / 10) + 1,
-            dayOfTenday: ((entry.day - 1) % 10) + 1
+            tenday: monthIndex * TENDAYS_PER_MONTH + Math.floor((entry.day - 1) / DAYS_PER_TENDAY) + 1,
+            dayOfTenday: ((entry.day - 1) % DAYS_PER_TENDAY) + 1
         };
     });
 }
@@ -167,6 +142,28 @@ function getHarptosYear(options = {}, fallbackYear = null) {
     return typeof fallbackYear === "number" ? fallbackYear : null;
 }
 
+function createStateFromEntry(entry, harptosYear, source) {
+    const leapYear = typeof harptosYear === "number" && isLeapYear(harptosYear);
+    return {
+        ...entry,
+        harptosYear,
+        source,
+        leapYear
+    };
+}
+
+function createStateFromDayOfYear(dayOfYear, harptosYear, source) {
+    const leapYear = typeof harptosYear === "number" && isLeapYear(harptosYear);
+    const entries = getHarptosEntries(leapYear);
+    const entry = entries[dayOfYear - 1];
+
+    if (!entry) {
+        throw new RangeError(`Invalid dayOfYear: ${dayOfYear}.`);
+    }
+
+    return createStateFromEntry(entry, harptosYear, source);
+}
+
 function createStateFromGregorian(input, options = {}) {
     const date = input instanceof Date ? new Date(input.getTime()) : parseGregorianString(input);
     if (!isValidDate(date)) {
@@ -178,21 +175,17 @@ function createStateFromGregorian(input, options = {}) {
     const entries = getHarptosEntries(leapYear);
     const dayOfYear = getGregorianDayOfYear(date);
     const entry = entries[dayOfYear - 1];
+
     if (!entry) {
         throw new RangeError(
             `Gregorian day ${dayOfYear} does not exist in Harptos year ${harptosYear}.`
         );
     }
 
-    return {
-        ...entry,
-        harptosYear,
-        source: {
-            type: "gregorian",
-            date
-        },
-        leapYear
-    };
+    return createStateFromEntry(entry, harptosYear, {
+        type: "gregorian",
+        date
+    });
 }
 
 function createStateFromHarptos(input, options = {}) {
@@ -201,60 +194,44 @@ function createStateFromHarptos(input, options = {}) {
     }
 
     const harptosYear = getHarptosYear(options, input.year ?? null);
-    const leapYear = typeof harptosYear === "number" && isLeapYear(harptosYear);
-    const entries = getHarptosEntries(leapYear);
 
     if (input.dayOfYear != null) {
-        const entry = entries[input.dayOfYear - 1];
-        if (!entry) {
-            throw new RangeError(`Invalid dayOfYear: ${input.dayOfYear}.`);
-        }
-
-        return {
-            ...entry,
-            harptosYear,
-            source: {
-                type: "harptos",
-                input
-            },
-            leapYear
-        };
+        return createStateFromDayOfYear(input.dayOfYear, harptosYear, {
+            type: "harptos",
+            input
+        });
     }
 
     const festivalName = normalizeFestivalName(input.festival);
     if (festivalName) {
+        const leapYear = typeof harptosYear === "number" && isLeapYear(harptosYear);
+        const entries = getHarptosEntries(leapYear);
         const entry = entries.find(candidate => candidate.festival === festivalName);
+
         if (!entry) {
             throw new RangeError(`${festivalName} does not occur in ${harptosYear}.`);
         }
 
-        return {
-            ...entry,
-            harptosYear,
-            source: {
-                type: "harptos",
-                input
-            },
-            leapYear
-        };
+        return createStateFromEntry(entry, harptosYear, {
+            type: "harptos",
+            input
+        });
     }
 
     const monthName = normalizeMonthName(input.month);
     const day = Number(input.day);
-    if (!monthName || !Number.isInteger(day) || day < 1 || day > 30) {
+    if (!monthName || !Number.isInteger(day) || day < 1 || day > DAYS_PER_MONTH) {
         throw new TypeError("Expected { month, day } for a Harptos month-day, or { festival }.");
     }
 
+    const leapYear = typeof harptosYear === "number" && isLeapYear(harptosYear);
+    const entries = getHarptosEntries(leapYear);
     const entry = entries.find(candidate => candidate.month === monthName && candidate.day === day);
-    return {
-        ...entry,
-        harptosYear,
-        source: {
-            type: "harptos",
-            input
-        },
-        leapYear
-    };
+
+    return createStateFromEntry(entry, harptosYear, {
+        type: "harptos",
+        input
+    });
 }
 
 function createState(input, options = {}) {
@@ -265,10 +242,50 @@ function createState(input, options = {}) {
     return createStateFromHarptos(input, options);
 }
 
+function normalizeMonthShift(monthIndex, amount) {
+    const shifted = monthIndex + amount;
+    const normalizedMonthIndex = ((shifted % MONTHS.length) + MONTHS.length) % MONTHS.length;
+    const yearOffset = (shifted - normalizedMonthIndex) / MONTHS.length;
+
+    return {
+        monthIndex: normalizedMonthIndex,
+        yearOffset
+    };
+}
+
+function shiftDayOfYear(harptosYear, dayOfYear, amount) {
+    if (typeof harptosYear !== "number") {
+        throw new TypeError("This operation requires a Harptos year.");
+    }
+
+    let targetYear = harptosYear;
+    let targetDay = dayOfYear + amount;
+
+    while (targetDay < 1) {
+        targetYear -= 1;
+        targetDay += getHarptosYearLength(targetYear);
+    }
+
+    while (targetDay > getHarptosYearLength(targetYear)) {
+        targetDay -= getHarptosYearLength(targetYear);
+        targetYear += 1;
+    }
+
+    return { year: targetYear, dayOfYear: targetDay };
+}
+
+function coerceHarptosDate(value) {
+    return value instanceof HarptosDate ? value : new HarptosDate(value);
+}
+
 class HarptosDate {
     static MONTHS = MONTHS;
 
     static FESTIVALS = FESTIVAL_SPECS.map(({ name }) => name);
+
+    static DAYS_PER_MONTH = DAYS_PER_MONTH;
+
+    static DAYS_PER_TENDAY = DAYS_PER_TENDAY;
 
     constructor(input, options = {}) {
         const state = createState(input, options);
@@ -287,8 +304,31 @@ class HarptosDate {
         return new HarptosDate(input, options);
     }
 
+    static fromFaerunParts(input, options = {}) {
+        return HarptosDate.fromHarptos(input, options);
+    }
+
     static parse(input, options = {}) {
         return HarptosDate.fromGregorian(input, options);
+    }
+
+    static compare(left, right) {
+        const first = coerceHarptosDate(left);
+        const second = coerceHarptosDate(right);
+
+        if (typeof first.harptosYear === "number" && typeof second.harptosYear === "number") {
+            if (first.harptosYear !== second.harptosYear) {
+                return first.harptosYear - second.harptosYear;
+            }
+
+            return first.dayOfYear - second.dayOfYear;
+        }
+
+        if (first.harptosYear == null && second.harptosYear == null) {
+            return first.dayOfYear - second.dayOfYear;
+        }
+
+        throw new RangeError("Cannot compare Harptos dates when only one side has a year.");
     }
 
     static toString(value) {
@@ -305,6 +345,14 @@ class HarptosDate {
 
     getMonth() {
         return this.month;
+    }
+
+    getMonthIndex() {
+        return this.month == null ? null : MONTH_INDEX[this.month];
+    }
+
+    getDate() {
+        return this.day;
     }
 
     getDay() {
@@ -347,19 +395,92 @@ class HarptosDate {
         return `${getOrdinal(this.dayOfTenday)} day of the tenday`;
     }
 
-    toObject() {
+    addDays(amount) {
+        if (!Number.isInteger(amount)) {
+            throw new TypeError("addDays expects an integer number of days.");
+        }
+
+        const shifted = shiftDayOfYear(this.harptosYear, this.dayOfYear, amount);
+        return HarptosDate.fromHarptos(shifted);
+    }
+
+    addTendays(amount) {
+        if (!Number.isInteger(amount)) {
+            throw new TypeError("addTendays expects an integer number of tendays.");
+        }
+
+        return this.addDays(amount * DAYS_PER_TENDAY);
+    }
+
+    addMonths(amount) {
+        if (!Number.isInteger(amount)) {
+            throw new TypeError("addMonths expects an integer number of months.");
+        }
+
+        if (typeof this.harptosYear !== "number") {
+            throw new TypeError("addMonths requires a Harptos year.");
+        }
+
+        if (this.isFestival()) {
+            throw new TypeError("addMonths is only supported for month dates.");
+        }
+
+        const shifted = normalizeMonthShift(this.getMonthIndex(), amount);
+        return HarptosDate.fromHarptos({
+            year: this.harptosYear + shifted.yearOffset,
+            month: MONTHS[shifted.monthIndex],
+            day: this.day
+        });
+    }
+
+    addYears(amount) {
+        if (!Number.isInteger(amount)) {
+            throw new TypeError("addYears expects an integer number of years.");
+        }
+
+        if (typeof this.harptosYear !== "number") {
+            throw new TypeError("addYears requires a Harptos year.");
+        }
+
+        const targetYear = this.harptosYear + amount;
+        if (this.isFestival()) {
+            if (this.festival === "Shieldmeet" && !isLeapYear(targetYear)) {
+                throw new RangeError(`Shieldmeet does not occur in ${targetYear}.`);
+            }
+
+            return HarptosDate.fromHarptos({
+                year: targetYear,
+                festival: this.festival
+            });
+        }
+
+        return HarptosDate.fromHarptos({
+            year: targetYear,
+            month: this.month,
+            day: this.day
+        });
+    }
+
+    toFaerunParts() {
         return {
             kind: this.kind,
+            year: this.harptosYear,
+            harptosYear: this.harptosYear,
             month: this.month,
+            monthIndex: this.getMonthIndex(),
             day: this.day,
+            date: this.day,
             festival: this.festival,
             season: this.season,
             dayOfYear: this.dayOfYear,
             tenday: this.tenday,
             dayOfTenday: this.dayOfTenday,
-            harptosYear: this.harptosYear,
             leapYear: this.leapYear
         };
+    }
+
+    toObject() {
+        return this.toFaerunParts();
     }
 
     getFaerunDateString() {
@@ -394,11 +515,19 @@ function fromHarptos(input, options = {}) {
     return HarptosDate.fromHarptos(input, options);
 }
 
+function fromFaerunParts(input, options = {}) {
+    return HarptosDate.fromFaerunParts(input, options);
+}
+
 export {
-    MONTHS,
+    DAYS_PER_MONTH,
+    DAYS_PER_TENDAY,
     FESTIVAL_SPECS as FESTIVALS,
-    HarptosDate,
     FaerunDate,
+    HarptosDate,
+    MONTHS,
+    TENDAYS_PER_MONTH,
+    fromFaerunParts,
     fromGregorian,
     fromHarptos
 };

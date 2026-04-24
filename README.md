@@ -14,6 +14,8 @@ This package models Harptos as:
 
 Unlike the previous implementation, festivals are treated as standalone days between months, not as regular month dates.
 
+The core calendar metadata now lives in a dedicated module, and the public API exposes more Date-like helpers for moving around the Harptos calendar.
+
 ## Installation
 
 ```bash
@@ -90,6 +92,14 @@ Returns the Harptos month name or `null` for festivals.
 
 Returns the day of the month or `null` for festivals.
 
+### `getDate()`
+
+Date-style alias of `getDay()`.
+
+### `getMonthIndex()`
+
+Returns the zero-based month index or `null` for festivals.
+
 ### `getDayOfYear()`
 
 Returns the ordinal day in the Harptos year, including festivals.
@@ -113,6 +123,34 @@ Legacy helper that returns a descriptive label such as `5th day of the tenday`. 
 ### `getSeason()`
 
 Returns `Winter`, `Spring`, `Summer`, or `Autumn`.
+
+### `addDays(amount)`
+
+Returns a new `HarptosDate` shifted by the given number of days. This operation requires a Harptos year.
+
+### `addTendays(amount)`
+
+Returns a new `HarptosDate` shifted by `amount * 10` days.
+
+### `addMonths(amount)`
+
+Returns a new `HarptosDate` shifted by calendar months while preserving the day-of-month. This is only supported for month dates, not festivals.
+
+### `addYears(amount)`
+
+Returns a new `HarptosDate` shifted by Harptos years. `Shieldmeet` throws when the target year is not leap.
+
+### `toFaerunParts()`
+
+Returns normalized calendar parts, including `year`, `monthIndex`, `dayOfYear`, `tenday`, and festival metadata.
+
+### `HarptosDate.fromFaerunParts(input, options?)`
+
+Alias of `fromHarptos`, useful when working with normalized parts objects.
+
+### `HarptosDate.compare(a, b)`
+
+Compares two Harptos dates by year and ordinal day.
 
 ### `toString()`
 
