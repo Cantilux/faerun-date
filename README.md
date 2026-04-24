@@ -45,7 +45,7 @@ console.log(direct.toLocaleString());
 
 const ordinal = new HarptosDate("2026-04-24", { drYear: 1498 });
 console.log(ordinal.toString());
-// "22 Tarsakh 1498 DR"
+// "23 Tarsakh 1498 DR"
 ```
 
 ## API
