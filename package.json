@@ -1,40 +1,48 @@
 {
     "name": "faerun-date",
     "version": "0.1.9",
-    "description": "Convert real-world dates into the Forgotten Realms (Faerûn) calendar format",
+    "description": "Canonical Harptos calendar utilities for JavaScript",
+    "type": "module",
     "main": "src/index.js",
-    "devDependencies": {
-        "semantic-release": "^24.0.0",
-        "@semantic-release/commit-analyzer": "^11.1.0",
-        "@semantic-release/release-notes-generator": "^12.1.0",
-        "@semantic-release/changelog": "^6.0.3",
-        "@semantic-release/git": "^10.0.1",
-        "conventional-changelog-conventionalcommits": "^7.0.2"
-    },
     "exports": {
-        ".": {
-            "import": "./src/index.js",
-            "require": "./src/index.js"
-        }
+        ".": "./src/index.js"
     },
     "bin": {
         "faerun-compare-weeks": "./bin/compare-weeks.js"
     },
     "scripts": {
+        "test": "node --test",
         "release": "semantic-release",
         "release:patch": "npm version patch --sign-git-tag && git push && git push --follow-tags && npm publish --access public",
         "release:minor": "npm version minor --sign-git-tag && git push && git push --follow-tags && npm publish --access public",
         "release:major": "npm version major --sign-git-tag && git push && git push --follow-tags && npm publish --access public"
     },
+    "files": [
+        "src",
+        "bin",
+        "README.md",
+        "LICENSE"
+    ],
     "keywords": [
         "dnd",
         "forgotten-realms",
+        "harptos",
         "calendar",
         "faerun",
         "date",
         "fantasy",
         "rpg"
     ],
+    "devDependencies": {
+        "@semantic-release/changelog": "^6.0.3",
+        "@semantic-release/commit-analyzer": "^11.1.0",
+        "@semantic-release/git": "^10.0.1",
+        "@semantic-release/github": "^10.3.5",
+        "@semantic-release/npm": "^12.0.1",
+        "@semantic-release/release-notes-generator": "^12.1.0",
+        "conventional-changelog-conventionalcommits": "^7.0.2",
+        "semantic-release": "^24.0.0"
+    },
     "author": "Cantilux",
     "license": "MIT"
 }

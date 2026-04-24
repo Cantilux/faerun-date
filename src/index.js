@@ -1,113 +1,406 @@
-// FaerunDate is a utility class to convert real-world dates into the Faerûn calendar format
-// from the Forgotten Realms setting in Dungeons & Dragons. It includes support for months, seasons,
-// holidays, weekdays, and event management.
-class FaerunDate {
-    static MONTH_NAMES = [
-        "Hammer", "Alturiak", "Ches", "Tarsakh", "Mirtul", "Kythorn",
-        "Flamerule", "Eleasis", "Eleint", "Marpenoth", "Uktar", "Nightal"
-    ];
+const MONTHS = [
+    "Hammer",
+    "Alturiak",
+    "Ches",
+    "Tarsakh",
+    "Mirtul",
+    "Kythorn",
+    "Flamerule",
+    "Eleasis",
+    "Eleint",
+    "Marpenoth",
+    "Uktar",
+    "Nightal"
+];
 
-    static FESTIVALS = [
-        { name: "Midwinter", day: 1, month: 2 },
-        { name: "Greengrass", day: 1, month: 4 },
-        { name: "Midsummer", day: 1, month: 7 },
-        { name: "Highharvestide", day: 27, month: 9 },
-        { name: "Feast of the Moon", day: 1, month: 11 },
-        { name: "Shieldmeet", day: 2, month: 7, leapYearOnly: true }
-    ];
+const FESTIVAL_SPECS = [
+    { name: "Midwinter", afterMonth: "Hammer", season: "Winter" },
+    { name: "Greengrass", afterMonth: "Tarsakh", season: "Spring" },
+    { name: "Midsummer", afterMonth: "Flamerule", season: "Summer" },
+    { name: "Shieldmeet", afterMonth: "Flamerule", season: "Summer", leapYearOnly: true },
+    { name: "Highharvestide", afterMonth: "Eleint", season: "Autumn" },
+    { name: "Feast of the Moon", afterMonth: "Uktar", season: "Winter" }
+];
 
-    static SEASONS = [
-        { name: "Deepwinter", months: [1, 2] },
-        { name: "Spring", months: [3, 4, 5] },
-        { name: "Summer", months: [6, 7, 8] },
-        { name: "Autumn", months: [9, 10] },
-        { name: "Winter", months: [11, 12] }
-    ];
+const MONTH_SEASONS = {
+    Hammer: "Winter",
+    Alturiak: "Winter",
+    Ches: "Spring",
+    Tarsakh: "Spring",
+    Mirtul: "Spring",
+    Kythorn: "Summer",
+    Flamerule: "Summer",
+    Eleasis: "Summer",
+    Eleint: "Autumn",
+    Marpenoth: "Autumn",
+    Uktar: "Autumn",
+    Nightal: "Winter"
+};
 
-    static WEEKDAYS = [
-        "Sul", "Far", "Tar", "Sar", "Rai", "Zor", "Kyth", "Hamar", "Ith", "Alt"
-    ];
+const ORDINAL_SUFFIXES = ["th", "st", "nd", "rd"];
 
-    constructor(date, options = {}) {
-        const inputDate = date instanceof Date ? date : new Date();
-        // const day = String(inputDate.getDate()).padStart(2, '0');
-        const day = inputDate.getDate();
-        const month = inputDate.getMonth() + 1;
-        const year = inputDate.getFullYear();
+function isValidDate(value) {
+    return value instanceof Date && !Number.isNaN(value.getTime());
+}
 
-        this.realDate = { day, month, year };
-        this.faerunMonth = FaerunDate.MONTH_NAMES[month - 1];
-        this.customFaerunYear = options.faerunYear;
+function getOrdinal(value) {
+    const mod100 = value % 100;
+    if (mod100 >= 11 && mod100 <= 13) {
+        return `${value}th`;
+    }
+
+    return `${value}${ORDINAL_SUFFIXES[value % 10] ?? "th"}`;
+}
+
+function normalizeMonthName(month) {
+    if (typeof month !== "string") {
+        return null;
+    }
+
+    return MONTHS.find(name => name.toLowerCase() === month.toLowerCase()) ?? null;
+}
+
+function normalizeFestivalName(festival) {
+    if (typeof festival !== "string") {
+        return null;
+    }
+
+    return FESTIVAL_SPECS.find(spec => spec.name.toLowerCase() === festival.toLowerCase())?.name ?? null;
+}
+
+function parseGregorianString(value) {
+    const isoDateOnlyMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+    if (isoDateOnlyMatch) {
+        const [, year, month, day] = isoDateOnlyMatch;
+        return new Date(Number(year), Number(month) - 1, Number(day));
+    }
+
+    const parsed = new Date(value);
+    return isValidDate(parsed) ? parsed : null;
+}
+
+function getGregorianDayOfYear(date) {
+    const year = date.getFullYear();
+    const startOfYear = Date.UTC(year, 0, 1);
+    const currentDay = Date.UTC(year, date.getMonth(), date.getDate());
+    const millisecondsPerDay = 24 * 60 * 60 * 1000;
+    const dayOfYear = Math.floor((currentDay - startOfYear) / millisecondsPerDay) + 1;
+    const maxDayOfYear = isLeapYear(year) ? 366 : 365;
+
+    if (dayOfYear < 1 || dayOfYear > maxDayOfYear) {
+        throw new RangeError(`Computed Gregorian day of year out of range: ${dayOfYear}`);
+    }
+
+    return dayOfYear;
+}
+
+function isLeapYear(year) {
+    return year % 4 === 0;
+}
+
+function getHarptosEntries(leapYear) {
+    const entries = [];
+
+    for (const month of MONTHS) {
+        for (let day = 1; day <= 30; day += 1) {
+            entries.push({
+                kind: "month-day",
+                month,
+                day,
+                festival: null,
+                season: MONTH_SEASONS[month]
+            });
+        }
+
+        for (const festival of FESTIVAL_SPECS) {
+            if (festival.afterMonth !== month) {
+                continue;
+            }
+
+            if (festival.leapYearOnly && !leapYear) {
+                continue;
+            }
+
+            entries.push({
+                kind: "festival",
+                month: null,
+                day: null,
+                festival: festival.name,
+                season: festival.season
+            });
+        }
+    }
+
+    return entries.map((entry, index) => {
+        if (entry.kind === "festival") {
+            return {
+                ...entry,
+                dayOfYear: index + 1,
+                tenday: null,
+                dayOfTenday: null
+            };
+        }
+
+        const monthIndex = MONTHS.indexOf(entry.month);
+        return {
+            ...entry,
+            dayOfYear: index + 1,
+            tenday: monthIndex * 3 + Math.floor((entry.day - 1) / 10) + 1,
+            dayOfTenday: ((entry.day - 1) % 10) + 1
+        };
+    });
+}
+
+function getHarptosYear(options = {}, fallbackYear = null) {
+    if (typeof options.drYear === "number") {
+        return options.drYear;
+    }
+
+    if (typeof options.faerunYear === "number") {
+        return options.faerunYear;
+    }
+
+    if (typeof options.yearOffset === "number" && typeof fallbackYear === "number") {
+        return fallbackYear + options.yearOffset;
+    }
+
+    return typeof fallbackYear === "number" ? fallbackYear : null;
+}
+
+function createStateFromGregorian(input, options = {}) {
+    const date = input instanceof Date ? new Date(input.getTime()) : parseGregorianString(input);
+    if (!isValidDate(date)) {
+        throw new TypeError("Expected a valid Gregorian Date or date string.");
+    }
+
+    const harptosYear = getHarptosYear(options, date.getFullYear());
+    const leapYear = isLeapYear(harptosYear ?? date.getFullYear());
+    const entries = getHarptosEntries(leapYear);
+    const dayOfYear = getGregorianDayOfYear(date);
+    const entry = entries[dayOfYear - 1];
+    if (!entry) {
+        throw new RangeError(
+            `Gregorian day ${dayOfYear} does not exist in Harptos year ${harptosYear}.`
+        );
+    }
+
+    return {
+        ...entry,
+        harptosYear,
+        source: {
+            type: "gregorian",
+            date
+        },
+        leapYear
+    };
+}
+
+function createStateFromHarptos(input, options = {}) {
+    if (input === null || typeof input !== "object" || Array.isArray(input)) {
+        throw new TypeError("Expected a Harptos date object.");
+    }
+
+    const harptosYear = getHarptosYear(options, input.year ?? null);
+    const leapYear = typeof harptosYear === "number" && isLeapYear(harptosYear);
+    const entries = getHarptosEntries(leapYear);
+
+    if (input.dayOfYear != null) {
+        const entry = entries[input.dayOfYear - 1];
+        if (!entry) {
+            throw new RangeError(`Invalid dayOfYear: ${input.dayOfYear}.`);
+        }
+
+        return {
+            ...entry,
+            harptosYear,
+            source: {
+                type: "harptos",
+                input
+            },
+            leapYear
+        };
+    }
+
+    const festivalName = normalizeFestivalName(input.festival);
+    if (festivalName) {
+        const entry = entries.find(candidate => candidate.festival === festivalName);
+        if (!entry) {
+            throw new RangeError(`${festivalName} does not occur in ${harptosYear}.`);
+        }
+
+        return {
+            ...entry,
+            harptosYear,
+            source: {
+                type: "harptos",
+                input
+            },
+            leapYear
+        };
+    }
+
+    const monthName = normalizeMonthName(input.month);
+    const day = Number(input.day);
+    if (!monthName || !Number.isInteger(day) || day < 1 || day > 30) {
+        throw new TypeError("Expected { month, day } for a Harptos month-day, or { festival }.");
+    }
+
+    const entry = entries.find(candidate => candidate.month === monthName && candidate.day === day);
+    return {
+        ...entry,
+        harptosYear,
+        source: {
+            type: "harptos",
+            input
+        },
+        leapYear
+    };
+}
+
+function createState(input, options = {}) {
+    if (isValidDate(input) || typeof input === "string") {
+        return createStateFromGregorian(input, options);
+    }
+
+    return createStateFromHarptos(input, options);
+}
+
+class HarptosDate {
+    static MONTHS = MONTHS;
+
+    static FESTIVALS = FESTIVAL_SPECS.map(({ name }) => name);
+
+    constructor(input, options = {}) {
+        const state = createState(input, options);
+        Object.assign(this, state);
     }
 
     static isLeapYear(year) {
-        return year % 4 === 0;
+        return isLeapYear(year);
+    }
+
+    static fromGregorian(input, options = {}) {
+        return new HarptosDate(input, options);
+    }
+
+    static fromHarptos(input, options = {}) {
+        return new HarptosDate(input, options);
+    }
+
+    static parse(input, options = {}) {
+        return HarptosDate.fromGregorian(input, options);
+    }
+
+    static toString(value) {
+        return value.toString();
+    }
+
+    isFestival() {
+        return this.kind === "festival";
     }
 
     getFestival() {
-        const { day, month, year } = this.realDate;
-        const leap = FaerunDate.isLeapYear(year);
-        return FaerunDate.FESTIVALS.find(f => f.day === day && f.month === month && (!f.leapYearOnly || leap))?.name ?? null;
-    }
-
-    getSeason() {
-        const m = this.realDate.month;
-        return FaerunDate.SEASONS.find(season => season.months.includes(m))?.name ?? "Unknown";
-    }
-
-    getWeekday() {
-        const { day, month } = this.realDate;
-        const dayOfYear = (month - 1) * 30 + day;
-        return FaerunDate.WEEKDAYS[dayOfYear % 10];
+        return this.festival;
     }
 
     getMonth() {
-        return this.faerunMonth;
+        return this.month;
     }
 
-    getFaerunDateString() {
-        const festival = this.getFestival();
-        const formattedDay = String(this.realDate.day).padStart(2, '0');
-        return festival ? `[Festival] ${festival}` : `${formattedDay} ${this.faerunMonth}`;
+    getDay() {
+        return this.day;
+    }
+
+    getDayOfYear() {
+        return this.dayOfYear;
+    }
+
+    getSeason() {
+        return this.season;
     }
 
     getFaerunYear() {
-        return this.customFaerunYear ?? null;
+        return this.harptosYear;
+    }
+
+    getHarptosYear() {
+        return this.harptosYear;
+    }
+
+    getTenday() {
+        return this.tenday;
     }
 
     getWeekOfYear() {
-        const { day, month, year } = this.realDate;
-        const leap = FaerunDate.isLeapYear(year);
-        const daysFromMonths = (month - 1) * 30;
-        const festivalsBefore = FaerunDate.FESTIVALS
-            .filter(f =>
-                f.month < month || (f.month === month && parseInt(f.day) < day)
-            )
-            .filter(f => !f.leapYearOnly || leap)
-            .length;
-        const dayOfYear = daysFromMonths + day + festivalsBefore;
-        // Faerûn weeks are 10-day units (Tendays)
-        return Math.floor((dayOfYear - 1) / 10) + 1;
+        return this.getTenday();
     }
 
+    getDayOfTenday() {
+        return this.dayOfTenday;
+    }
+
+    getWeekday() {
+        if (this.dayOfTenday == null) {
+            return null;
+        }
+
+        return `${getOrdinal(this.dayOfTenday)} day of the tenday`;
+    }
+
+    toObject() {
+        return {
+            kind: this.kind,
+            month: this.month,
+            day: this.day,
+            festival: this.festival,
+            season: this.season,
+            dayOfYear: this.dayOfYear,
+            tenday: this.tenday,
+            dayOfTenday: this.dayOfTenday,
+            harptosYear: this.harptosYear,
+            leapYear: this.leapYear
+        };
+    }
+
+    getFaerunDateString() {
+        return this.toString();
+    }
+
+    toString() {
+        const yearPart = this.harptosYear == null ? "" : ` ${this.harptosYear} DR`;
+        if (this.isFestival()) {
+            return `${this.festival}${yearPart}`;
+        }
+
+        return `${this.day} ${this.month}${yearPart}`;
+    }
 
     toLocaleString() {
-        const festival = this.getFestival();
-        const weekday = festival ? festival : this.getWeekday();
-        const yearPart = this.getFaerunYear() ? ` ${this.getFaerunYear()} DR` : "";
-        const week = this.getWeekOfYear();
-        const formattedDay = String(this.realDate.day).padStart(2, '0');
-        return `${weekday}, ${formattedDay} ${this.faerunMonth}${yearPart} – Season: ${this.getSeason()} – Week ${week}`;
-    }
+        if (this.isFestival()) {
+            return `${this.toString()} - ${this.season} festival`;
+        }
 
-    static parse(dateString, options = {}) {
-        const date = new Date(dateString);
-        return new FaerunDate(date, options);
-    }
-
-    static toString(faerunDate) {
-        return faerunDate.toLocaleString();
+        return `${this.toString()} - ${this.season} - Tenday ${this.tenday}, Day ${this.dayOfTenday}`;
     }
 }
 
-export default FaerunDate;
+const FaerunDate = HarptosDate;
+
+function fromGregorian(input, options = {}) {
+    return HarptosDate.fromGregorian(input, options);
+}
+
+function fromHarptos(input, options = {}) {
+    return HarptosDate.fromHarptos(input, options);
+}
+
+export {
+    MONTHS,
+    FESTIVAL_SPECS as FESTIVALS,
+    HarptosDate,
+    FaerunDate,
+    fromGregorian,
+    fromHarptos
+};
+
+export default HarptosDate;
