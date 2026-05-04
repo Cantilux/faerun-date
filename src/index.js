@@ -43,15 +43,32 @@ function parseGregorianString(value) {
     const isoDateOnlyMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
     if (isoDateOnlyMatch) {
         const [, year, month, day] = isoDateOnlyMatch;
-        return new Date(Number(year), Number(month) - 1, Number(day));
+        const numericYear = Number(year);
+        const numericMonth = Number(month);
+        const numericDay = Number(day);
+        const parsed = new Date(numericYear, numericMonth - 1, numericDay);
+
+        if (
+            parsed.getFullYear() !== numericYear ||
+            parsed.getMonth() !== numericMonth - 1 ||
+            parsed.getDate() !== numericDay
+        ) {
+            return null;
+        }
+
+        return parsed;
     }
 
     const parsed = new Date(value);
     return isValidDate(parsed) ? parsed : null;
 }
 
-function isLeapYear(year) {
+function isHarptosLeapYear(year) {
     return year % 4 === 0;
+}
+
+function isGregorianLeapYear(year) {
+    return year % 400 === 0 || (year % 4 === 0 && year % 100 !== 0);
 }
 
 function getGregorianDayOfYear(date) {
@@ -60,7 +77,7 @@ function getGregorianDayOfYear(date) {
     const currentDay = Date.UTC(year, date.getMonth(), date.getDate());
     const millisecondsPerDay = 24 * 60 * 60 * 1000;
     const dayOfYear = Math.floor((currentDay - startOfYear) / millisecondsPerDay) + 1;
-    const maxDayOfYear = isLeapYear(year) ? 366 : 365;
+    const maxDayOfYear = isGregorianLeapYear(year) ? 366 : 365;
 
     if (dayOfYear < 1 || dayOfYear > maxDayOfYear) {
         throw new RangeError(`Computed Gregorian day of year out of range: ${dayOfYear}`);
@@ -70,7 +87,7 @@ function getGregorianDayOfYear(date) {
 }
 
 function getHarptosYearLength(year) {
-    return isLeapYear(year) ? 366 : 365;
+    return isHarptosLeapYear(year) ? 366 : 365;
 }
 
 function getHarptosEntries(leapYear) {
@@ -143,7 +160,7 @@ function getHarptosYear(options = {}, fallbackYear = null) {
 }
 
 function createStateFromEntry(entry, harptosYear, source) {
-    const leapYear = typeof harptosYear === "number" && isLeapYear(harptosYear);
+    const leapYear = typeof harptosYear === "number" && isHarptosLeapYear(harptosYear);
     return {
         ...entry,
         harptosYear,
@@ -153,7 +170,7 @@ function createStateFromEntry(entry, harptosYear, source) {
 }
 
 function createStateFromDayOfYear(dayOfYear, harptosYear, source) {
-    const leapYear = typeof harptosYear === "number" && isLeapYear(harptosYear);
+    const leapYear = typeof harptosYear === "number" && isHarptosLeapYear(harptosYear);
     const entries = getHarptosEntries(leapYear);
     const entry = entries[dayOfYear - 1];
 
@@ -171,7 +188,7 @@ function createStateFromGregorian(input, options = {}) {
     }
 
     const harptosYear = getHarptosYear(options, date.getFullYear());
-    const leapYear = isLeapYear(harptosYear ?? date.getFullYear());
+    const leapYear = isHarptosLeapYear(harptosYear ?? date.getFullYear());
     const entries = getHarptosEntries(leapYear);
     const dayOfYear = getGregorianDayOfYear(date);
     const entry = entries[dayOfYear - 1];
@@ -204,7 +221,7 @@ function createStateFromHarptos(input, options = {}) {
 
     const festivalName = normalizeFestivalName(input.festival);
     if (festivalName) {
-        const leapYear = typeof harptosYear === "number" && isLeapYear(harptosYear);
+        const leapYear = typeof harptosYear === "number" && isHarptosLeapYear(harptosYear);
         const entries = getHarptosEntries(leapYear);
         const entry = entries.find(candidate => candidate.festival === festivalName);
 
@@ -224,7 +241,7 @@ function createStateFromHarptos(input, options = {}) {
         throw new TypeError("Expected { month, day } for a Harptos month-day, or { festival }.");
     }
 
-    const leapYear = typeof harptosYear === "number" && isLeapYear(harptosYear);
+    const leapYear = typeof harptosYear === "number" && isHarptosLeapYear(harptosYear);
     const entries = getHarptosEntries(leapYear);
     const entry = entries.find(candidate => candidate.month === monthName && candidate.day === day);
 
@@ -293,7 +310,7 @@ class HarptosDate {
     }
 
     static isLeapYear(year) {
-        return isLeapYear(year);
+        return isHarptosLeapYear(year);
     }
 
     static fromGregorian(input, options = {}) {
@@ -444,7 +461,7 @@ class HarptosDate {
 
         const targetYear = this.harptosYear + amount;
         if (this.isFestival()) {
-            if (this.festival === "Shieldmeet" && !isLeapYear(targetYear)) {
+            if (this.festival === "Shieldmeet" && !isHarptosLeapYear(targetYear)) {
                 throw new RangeError(`Shieldmeet does not occur in ${targetYear}.`);
             }
 

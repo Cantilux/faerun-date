@@ -51,6 +51,20 @@ test("Gregorian ordinal mapping lands on the first day after Midwinter", () => {
     assert.equal(date.getDayOfTenday(), 1);
 });
 
+test("Gregorian conversion keeps Harptos months at exactly thirty days", () => {
+    const februaryEnd = fromGregorian("2026-02-28", { drYear: 1498 });
+    const afterGregorianFebruary = fromGregorian("2026-03-01", { drYear: 1498 });
+    const alturiakEnd = fromGregorian("2026-03-02", { drYear: 1498 });
+    const chesStart = fromGregorian("2026-03-03", { drYear: 1498 });
+    const afterThirtyOneDayGregorianMonth = fromGregorian("2026-04-01", { drYear: 1498 });
+
+    assert.equal(februaryEnd.toString(), "28 Alturiak 1498 DR");
+    assert.equal(afterGregorianFebruary.toString(), "29 Alturiak 1498 DR");
+    assert.equal(alturiakEnd.toString(), "30 Alturiak 1498 DR");
+    assert.equal(chesStart.toString(), "1 Ches 1498 DR");
+    assert.equal(afterThirtyOneDayGregorianMonth.toString(), "30 Ches 1498 DR");
+});
+
 test("Shieldmeet exists only in leap years", () => {
     const leapYearFestival = fromHarptos({ year: 1496, festival: "Shieldmeet" });
     assert.equal(leapYearFestival.getDayOfYear(), 214);
@@ -103,6 +117,13 @@ test("constructor accepts ISO date strings", () => {
     assert.equal(date.getMonth(), "Tarsakh");
     assert.equal(date.getDay(), 23);
     assert.equal(date.toString(), "23 Tarsakh 1498 DR");
+});
+
+test("constructor rejects impossible Gregorian ISO date strings", () => {
+    assert.throws(
+        () => new HarptosDate("2026-02-30", { drYear: 1498 }),
+        /Expected a valid Gregorian Date/
+    );
 });
 
 test("Gregorian day-of-year computation is stable for UTC timestamps", () => {

@@ -71,6 +71,7 @@ Accepts either:
 ### `HarptosDate.fromGregorian(input, options?)`
 
 Converts a Gregorian date to the equivalent ordinal day in Harptos for that year length.
+Harptos month boundaries are always calculated from 30-day months plus intercalary festivals, so Gregorian months with 28, 29, or 31 days do not change the length of Hammer, Alturiak, Ches, or any other Harptos month.
 
 ### `HarptosDate.fromHarptos(input, options?)`
 
